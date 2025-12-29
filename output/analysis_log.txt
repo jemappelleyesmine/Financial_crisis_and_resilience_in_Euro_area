@@ -1,0 +1,917 @@
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/output/analysis_log.txt
+  log type:  text
+ opened on:  29 Dec 2025, 18:31:27
+
+.    
+. * Load data
+. use "$data/Gravity_M2IT.dta", clear
+
+. 
+. * Define graph style (optional, for better aesthetics)
+. graph set window fontface "Times New Roman"
+
+. 
+. * --------------------------------------------------------------------
+. * 2. Data Preparation
+. * --------------------------------------------------------------------
+. 
+. * 1. Define the Post-Crisis Period
+. gen post_crisis = (year >= 2009)
+
+. 
+. * 2. Generate Log GDP
+. gen ln_gdp_i = ln(gdp_i)
+(14,514 missing values generated)
+
+. gen ln_gdp_j = ln(gdp_j)
+(14,364 missing values generated)
+
+. 
+. * 3. Define the "Euro Area" (EA)
+. * Note: The dataset contains 'eu_o' (European Union), but the research question 
+. * focuses on the Euro Area (Currency Union). 
+. * We define the Euro Area members of 2008:
+. * Austria (AUT), Belgium (BEL), Finland (FIN), France (FRA), Germany (DEU), 
+. * Greece (GRC), Ireland (IRL), Italy (ITA), Luxembourg (LUX), Netherlands (NLD), 
+. * Portugal (PRT), Spain (ESP), Slovenia (SVN), Cyprus (CYP), Malta (MLT).
+. 
+. gen ea_i = 0
+
+. gen ea_j = 0
+
+. * List of EA15 countries using ISO3 codes
+. local ea_list "AUT BEL FIN FRA DEU GRC IRL ITA LUX NLD PRT ESP SVN CYP MLT"
+
+. 
+. foreach c of local ea_list {
+  2.     replace ea_i = 1 if iso3_i == "`c'"
+  3.     replace ea_j = 1 if iso3_j == "`c'"
+  4. }
+(3,967 real changes made)
+(3,952 real changes made)
+(4,033 real changes made)
+(3,937 real changes made)
+(3,962 real changes made)
+(3,742 real changes made)
+(4,049 real changes made)
+(4,047 real changes made)
+(4,055 real changes made)
+(4,025 real changes made)
+(3,853 real changes made)
+(3,545 real changes made)
+(3,906 real changes made)
+(3,930 real changes made)
+(4,041 real changes made)
+(3,932 real changes made)
+(3,689 real changes made)
+(3,407 real changes made)
+(4,055 real changes made)
+(3,993 real changes made)
+(3,914 real changes made)
+(3,602 real changes made)
+(4,033 real changes made)
+(4,011 real changes made)
+(3,568 real changes made)
+(3,879 real changes made)
+(3,586 real changes made)
+(3,136 real changes made)
+(3,346 real changes made)
+(2,907 real changes made)
+
+. 
+. * 4 Define two groups: Euro Area (EA) vs. Rest of the World (RoW)
+. gen region_group = "Rest of the World"
+
+. replace region_group = "Euro Area" if ea_i == 1
+(58,057 real changes made)
+
+. 
+. * 5. Generate Interaction Terms (Difference-in-Differences)
+. * Export Resilience: Impact on EA exports vs. the rest of the world after the crisis
+. gen ea_export_shock = ea_i * post_crisis
+
+. 
+. * Import Resilience: Impact on EA imports vs. the rest of the world after the crisis
+. gen ea_import_shock = ea_j * post_crisis
+
+. 
+. * --------------------------------------------------------------------
+. * 3. Descriptive Statistics & Graphs
+. * --------------------------------------------------------------------
+. * Graph 1: Total Exports Trend (Index 2008 = 100)
+. preserve
+
+.     * Exclude Intra-Euro Area trade
+.     * We exclude trade where both exporter and importer are EA members 
+.     * to focus on the external resilience/competitiveness of the Euro Area.
+.     drop if ea_i == 1 & (iso3_j == "AUT" | iso3_j == "BEL" | iso3_j == "FIN" | ///
+>                          iso3_j == "FRA" | iso3_j == "DEU" | iso3_j == "GRC" | ///
+>                          iso3_j == "IRL" | iso3_j == "ITA" | iso3_j == "LUX" | ///
+>                          iso3_j == "NLD" | iso3_j == "PRT" | iso3_j == "ESP" | ///
+>                                                  iso3_j == "SVN" | iso3_j == "CYP" | iso3_j == "MLT")
+(4,200 observations deleted)
+
+. 
+.     * Collapse data to aggregate trade by year and region
+.     collapse (sum) trade, by(year region_group)
+
+.     
+.     * Sort data to ensure the lines are plotted chronologically
+.     sort region_group year
+
+. 
+.     * Set 2008 as the base year (Index = 100)
+.     * Normalize the export volume to allow for relative comparison.
+.     gen trade_2008_val = trade if year == 2008
+(38 missing values generated)
+
+.     bysort region_group: egen base_2008 = max(trade_2008_val)
+
+.     
+.     * Calculate the export volume index
+.     gen trade_index = (trade / base_2008) * 100
+
+.     
+.     * Display a subset of data to verify the calculation
+.     list year region_group trade_index if year >= 2005 & year <= 2010
+
+     +-------------------------------------+
+     | year        region_group   trade_~x |
+     |-------------------------------------|
+  6. | 2005           Euro Area   66.74081 |
+  7. | 2006           Euro Area   76.49948 |
+  8. | 2007           Euro Area   89.48918 |
+  9. | 2008           Euro Area        100 |
+ 10. | 2009           Euro Area   77.55589 |
+     |-------------------------------------|
+ 11. | 2010           Euro Area   89.01648 |
+ 26. | 2005   Rest of the World   61.90622 |
+ 27. | 2006   Rest of the World   72.87463 |
+ 28. | 2007   Rest of the World   84.48432 |
+ 29. | 2008   Rest of the World        100 |
+     |-------------------------------------|
+ 30. | 2009   Rest of the World   76.74871 |
+ 31. | 2010   Rest of the World   96.44294 |
+     +-------------------------------------+
+
+. 
+.     * Plot the Line Graph
+.     twoway (line trade_index year if region_group == "Euro Area", ///
+>                 lcolor(blue) lwidth(thick)) ///
+>            (line trade_index year if region_group == "Rest of the World", ///
+>                 lcolor(gs10) lpattern(dash)), ///
+>            title("Evolution of Exports (Index 2008 = 100)") ///
+>            xtitle("Year") ytitle("Export Volume Index") ///
+>            legend(label(1 "Euro Area") label(2 "Rest of the World")) ///
+>            xline(2008, lpattern(dot) lcolor(red)) ///
+>            note("Source: Gravity_M2IT dataset. Base year 2008 = 100.") ///
+>            graphregion(color(white)) bgcolor(white)
+
+.            
+.     * Export the graph to a PNG file
+.     graph export "Graph1_Export_Trend_Fixed.png", replace
+file Graph1_Export_Trend_Fixed.png saved as PNG format
+
+. restore
+
+. 
+. 
+. * Graph 2: Trade Openness (Exports / GDP Ratio)
+. preserve
+
+.     * We need to aggregate Trade and GDP.
+.     * Note: GDP (gdp_i) is country-specific. In the bilateral dataset, 
+.         * gdp_i is repeated for each partner. We must avoid double counting.
+.     
+.     * Strategy: First, collapse to the country-year level.
+.     collapse (sum) trade (mean) gdp_i, by(iso3_i year region_group)
+
+.     
+.     * Then, aggregate to the region-year level.
+.     collapse (sum) trade gdp_i, by(year region_group)
+
+.     
+.     * Calculate the Trade-to-GDP ratio
+.     gen trade_gdp_ratio = trade / gdp_i
+
+.     
+.     * Plot the line graph
+.     twoway (line trade_gdp_ratio year if region_group == "Euro Area", lcolor(blue) lwidth(thick)) ///
+>            (line trade_gdp_ratio year if region_group == "Rest of the World", lcolor(gs10) lpattern(dash)), ///
+>            title("Trade Openness (Exports / GDP)") ///
+>            xtitle("Year") ytitle("Exports to GDP Ratio") ///
+>            legend(label(1 "Euro Area") label(2 "Rest of the World")) ///
+>            xline(2008, lpattern(dot) lcolor(red)) 
+
+.            
+.     * Export the graph
+.     graph export "Graph2_Trade_GDP.png", replace
+file Graph2_Trade_GDP.png saved as PNG format
+
+. restore
+
+. 
+. * Graph 3: Export Composition by Sector (Capital vs. Intermediate vs. Consumption)
+. preserve
+
+.     * 1. Aggregate sectoral trade by region
+.     * -----------------------------------------------------
+.     * We sum up the trade values for each sector within the two groups
+.     collapse (sum) cap inter conso, by(region_group)
+
+.     
+.     * 2. Calculate Shares
+.     * -----------------------------------------------------
+.     * Calculate total exports across these three sectors for the denominator
+.     gen total_sector = cap + inter + conso
+
+.     
+.     * Calculate the percentage share of each sector
+.     gen share_cap = (cap / total_sector) * 100
+
+.     gen share_inter = (inter / total_sector) * 100
+
+.     gen share_conso = (conso / total_sector) * 100
+
+.     
+.     * 3. Plot the Graph (Directly using the variables created above)
+.     * -----------------------------------------------------   
+.     graph bar share_cap share_inter share_conso, over(region_group) ///
+>         title("Export Specialization: Euro Area vs. Rest of World") ///
+>         ytitle("Share of Total Exports (%)") ///
+>         legend(label(1 "Capital Goods") label(2 "Intermediate Goods") label(3 "Consumption Goods")) ///
+>         bar(1, color(navy)) bar(2, color(ebblue)) bar(3, color(ltblue)) ///
+>                 ylabel(0(20)65) ///
+>         blabel(bar, format(%9.1f)) ///
+>         note("Note: This chart highlights the structural differences in export baskets.") scheme(s1mono)
+
+.         
+.     * 4. Export the graph
+.     * -----------------------------------------------------
+.     graph export "Graph3_Composition_Fixed.png", replace
+file Graph3_Composition_Fixed.png saved as PNG format
+
+. restore
+
+. 
+. * --------------------------------------------------------------------
+. * 4. Sample Selection
+. * --------------------------------------------------------------------
+. 
+. * Objective: Assess the Euro Area's EXTERNAL resilience.
+. * Strategy: Exclude Intra-Euro Area trade flows to focus on global competitiveness.
+. * The sample will include:
+. * 1. EA exports to RoW (Rest of World)
+. * 2. RoW exports to EA
+. * 3. RoW exports to RoW (Control group)
+. 
+. drop if ea_i == 1 & ea_j == 1
+(4,200 observations deleted)
+
+. 
+. * Set panel structure (Pair ID and Year)
+. egen pair_id = group(iso3_i iso3_j)
+
+. xtset pair_id year
+
+Panel variable: pair_id (unbalanced)
+ Time variable: year, 2000 to 2019, but with gaps
+         Delta: 1 unit
+
+. 
+. * --------------------------------------------------------------------
+. * 5. Main Econometric Estimation (PPML)
+. * --------------------------------------------------------------------
+. 
+. * We use Poisson Pseudo Maximum Likelihood (PPML) to account for zero trade flows and heteroskedasticity.
+. 
+. * 5.1 Total Trade Resilience
+. * Specification:
+. * - absorb(pair_id year): Controls for Pair Fixed Effects (time-invariant factors like distance) 
+. * and Year Fixed Effects (global shocks).
+. * - rta: Controls for Regional Trade Agreements.
+. * - cluster(pair_id): Clusters standard errors at the pair level.
+. 
+. ppmlhdfe trade ea_export_shock ea_import_shock ln_gdp_i ln_gdp_j rta, ///
+>     absorb(pair_id year) cluster(pair_id)
+(dropped 2076 observations that are either singletons or separated by a fixed effect)
+warning: dependent variable takes very low values after standardizing (2.0880e-10)
+Iteration 1:   deviance = 1.0296e+11  eps = .         iters = 4    tol = 1.0e-04  min(eta) =  -5.05  P   
+Iteration 2:   deviance = 3.8237e+10  eps = 1.69e+00  iters = 3    tol = 1.0e-04  min(eta) =  -6.89      
+Iteration 3:   deviance = 2.3989e+10  eps = 5.94e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.43      
+Iteration 4:   deviance = 2.0172e+10  eps = 1.89e-01  iters = 3    tol = 1.0e-04  min(eta) =  -9.53      
+Iteration 5:   deviance = 1.9058e+10  eps = 5.84e-02  iters = 3    tol = 1.0e-04  min(eta) = -10.51      
+Iteration 6:   deviance = 1.8744e+10  eps = 1.68e-02  iters = 2    tol = 1.0e-04  min(eta) = -11.47      
+Iteration 7:   deviance = 1.8661e+10  eps = 4.48e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.35      
+Iteration 8:   deviance = 1.8640e+10  eps = 1.11e-03  iters = 2    tol = 1.0e-04  min(eta) = -13.21      
+Iteration 9:   deviance = 1.8635e+10  eps = 2.52e-04  iters = 2    tol = 1.0e-04  min(eta) = -14.11      
+Iteration 10:  deviance = 1.8634e+10  eps = 5.10e-05  iters = 2    tol = 1.0e-04  min(eta) = -15.04      
+Iteration 11:  deviance = 1.8634e+10  eps = 9.12e-06  iters = 2    tol = 1.0e-05  min(eta) = -15.93      
+Iteration 12:  deviance = 1.8634e+10  eps = 1.46e-06  iters = 2    tol = 1.0e-06  min(eta) = -16.67   S  
+Iteration 13:  deviance = 1.8634e+10  eps = 2.11e-07  iters = 2    tol = 1.0e-06  min(eta) = -17.28   S  
+Iteration 14:  deviance = 1.8634e+10  eps = 2.70e-08  iters = 2    tol = 1.0e-07  min(eta) = -18.00   S  
+Iteration 15:  deviance = 1.8634e+10  eps = 2.93e-09  iters = 2    tol = 1.0e-09  min(eta) = -18.68   S O
+------------------------------------------------------------------------------------------------------------
+(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
+Converged in 15 iterations and 36 HDFE sub-iterations (tol = 1.0e-08)
+
+HDFE PPML regression                              No. of obs      =    518,259
+Absorbing 2 HDFE groups                           Residual df     =     34,380
+Statistics robust to heteroskedasticity           Wald chi2(5)    =     838.30
+Deviance             =  1.86341e+10               Prob > chi2     =     0.0000
+Log pseudolikelihood =  -9319434639               Pseudo R2       =     0.9877
+
+Number of clusters (pair_id)=     34,381
+                              (Std. err. adjusted for 34,381 clusters in pair_id)
+---------------------------------------------------------------------------------
+                |               Robust
+          trade | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+----------------+----------------------------------------------------------------
+ea_export_shock |   .0904647   .0292273     3.10   0.002     .0331802    .1477492
+ea_import_shock |   .0238524   .0315913     0.76   0.450    -.0380654    .0857702
+       ln_gdp_i |   .5692523   .0300892    18.92   0.000     .5102787     .628226
+       ln_gdp_j |   .5968234   .0312649    19.09   0.000     .5355454    .6581015
+            rta |   .0722979    .026297     2.75   0.006     .0207568     .123839
+          _cons |  -16.23923   1.329177   -12.22   0.000    -18.84437   -13.63409
+---------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     pair_id |     34381       34381           0    *|
+        year |        20           1          19     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+. est store Total_Trade
+
+. 
+. 
+. * --------------------------------------------------------------------
+. * 6. Heterogeneity Analysis (By Product Type)
+. * --------------------------------------------------------------------
+. 
+. * Literature (e.g., Bems et al., 2012) suggests the crisis hit "Capital Goods" and "Durable Goods" the hardest. 
+. * We test if the Euro Area's specialization in these sectors explains its performance.
+. 
+. * 6.1 Capital Goods (Variable: cap)
+. * Hypothesis: Significant negative impact expected due to investment collapse.
+. ppmlhdfe cap ea_export_shock ea_import_shock ln_gdp_i ln_gdp_j rta, ///
+>     absorb(pair_id year) cluster(pair_id)
+(dropped 22201 observations that are either singletons or separated by a fixed effect)
+warning: dependent variable takes very low values after standardizing (8.3553e-10)
+Iteration 1:   deviance = 2.2474e+10  eps = .         iters = 4    tol = 1.0e-04  min(eta) =  -5.29  P   
+Iteration 2:   deviance = 9.6271e+09  eps = 1.33e+00  iters = 3    tol = 1.0e-04  min(eta) =  -7.15      
+Iteration 3:   deviance = 6.7593e+09  eps = 4.24e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.78      
+Iteration 4:   deviance = 5.9735e+09  eps = 1.32e-01  iters = 3    tol = 1.0e-04  min(eta) =  -9.90      
+Iteration 5:   deviance = 5.7304e+09  eps = 4.24e-02  iters = 3    tol = 1.0e-04  min(eta) = -10.87      
+Iteration 6:   deviance = 5.6563e+09  eps = 1.31e-02  iters = 2    tol = 1.0e-04  min(eta) = -11.81      
+Iteration 7:   deviance = 5.6345e+09  eps = 3.86e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.73      
+Iteration 8:   deviance = 5.6284e+09  eps = 1.09e-03  iters = 2    tol = 1.0e-04  min(eta) = -13.70      
+Iteration 9:   deviance = 5.6268e+09  eps = 2.90e-04  iters = 2    tol = 1.0e-04  min(eta) = -14.63      
+Iteration 10:  deviance = 5.6264e+09  eps = 7.35e-05  iters = 2    tol = 1.0e-04  min(eta) = -15.58      
+Iteration 11:  deviance = 5.6263e+09  eps = 1.77e-05  iters = 2    tol = 1.0e-05  min(eta) = -16.46      
+Iteration 12:  deviance = 5.6262e+09  eps = 4.07e-06  iters = 2    tol = 1.0e-05  min(eta) = -17.43   S  
+Iteration 13:  deviance = 5.6262e+09  eps = 8.90e-07  iters = 2    tol = 1.0e-06  min(eta) = -18.41   S  
+Iteration 14:  deviance = 5.6262e+09  eps = 1.84e-07  iters = 2    tol = 1.0e-07  min(eta) = -19.36   S  
+Iteration 15:  deviance = 5.6262e+09  eps = 3.53e-08  iters = 2    tol = 1.0e-07  min(eta) = -20.22   S  
+Iteration 16:  deviance = 5.6262e+09  eps = 6.19e-09  iters = 2    tol = 1.0e-09  min(eta) = -20.90   S O
+------------------------------------------------------------------------------------------------------------
+(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
+Converged in 16 iterations and 38 HDFE sub-iterations (tol = 1.0e-08)
+
+HDFE PPML regression                              No. of obs      =    498,134
+Absorbing 2 HDFE groups                           Residual df     =     30,872
+Statistics robust to heteroskedasticity           Wald chi2(5)    =     594.40
+Deviance             =   5626231126               Prob > chi2     =     0.0000
+Log pseudolikelihood =  -2814539378               Pseudo R2       =     0.9812
+
+Number of clusters (pair_id)=     30,873
+                              (Std. err. adjusted for 30,873 clusters in pair_id)
+---------------------------------------------------------------------------------
+                |               Robust
+            cap | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+----------------+----------------------------------------------------------------
+ea_export_shock |   .0422057   .0567493     0.74   0.457    -.0690209    .1534322
+ea_import_shock |   -.109646    .062737    -1.75   0.081    -.2326081    .0133162
+       ln_gdp_i |   .6761563   .0458118    14.76   0.000     .5863669    .7659457
+       ln_gdp_j |   .5496532   .0480795    11.43   0.000     .4554191    .6438874
+            rta |   -.012088   .0550665    -0.22   0.826    -.1200164    .0958404
+          _cons |  -19.37364   2.344426    -8.26   0.000    -23.96863   -14.77865
+---------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     pair_id |     30873       30873           0    *|
+        year |        20           1          19     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+. est store Capital_Goods
+
+. 
+. * 6.2 Intermediate Goods (Variable: inter)
+. * Hypothesis: Significant impact expected due to Global Value Chain (GVC) disruptions.
+. ppmlhdfe inter ea_export_shock ea_import_shock ln_gdp_i ln_gdp_j rta, ///
+>     absorb(pair_id year) cluster(pair_id)
+(dropped 5279 observations that are either singletons or separated by a fixed effect)
+warning: dependent variable takes very low values after standardizing (3.8933e-10)
+Iteration 1:   deviance = 6.4384e+10  eps = .         iters = 4    tol = 1.0e-04  min(eta) =  -4.99  P   
+Iteration 2:   deviance = 2.5477e+10  eps = 1.53e+00  iters = 3    tol = 1.0e-04  min(eta) =  -6.80      
+Iteration 3:   deviance = 1.6876e+10  eps = 5.10e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.35      
+Iteration 4:   deviance = 1.4547e+10  eps = 1.60e-01  iters = 3    tol = 1.0e-04  min(eta) =  -9.47      
+Iteration 5:   deviance = 1.3847e+10  eps = 5.05e-02  iters = 3    tol = 1.0e-04  min(eta) = -10.47      
+Iteration 6:   deviance = 1.3641e+10  eps = 1.51e-02  iters = 2    tol = 1.0e-04  min(eta) = -11.45      
+Iteration 7:   deviance = 1.3582e+10  eps = 4.30e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.40      
+Iteration 8:   deviance = 1.3567e+10  eps = 1.16e-03  iters = 2    tol = 1.0e-04  min(eta) = -13.29      
+Iteration 9:   deviance = 1.3563e+10  eps = 2.94e-04  iters = 2    tol = 1.0e-04  min(eta) = -14.08      
+Iteration 10:  deviance = 1.3562e+10  eps = 6.99e-05  iters = 2    tol = 1.0e-04  min(eta) = -15.07      
+Iteration 11:  deviance = 1.3562e+10  eps = 1.57e-05  iters = 2    tol = 1.0e-05  min(eta) = -16.04      
+Iteration 12:  deviance = 1.3562e+10  eps = 3.40e-06  iters = 2    tol = 1.0e-05  min(eta) = -16.97   S  
+Iteration 13:  deviance = 1.3562e+10  eps = 7.08e-07  iters = 2    tol = 1.0e-06  min(eta) = -17.88   S  
+Iteration 14:  deviance = 1.3562e+10  eps = 1.41e-07  iters = 2    tol = 1.0e-07  min(eta) = -18.88   S  
+Iteration 15:  deviance = 1.3562e+10  eps = 2.68e-08  iters = 2    tol = 1.0e-07  min(eta) = -19.88   S  
+Iteration 16:  deviance = 1.3562e+10  eps = 4.90e-09  iters = 2    tol = 1.0e-09  min(eta) = -20.88   S O
+------------------------------------------------------------------------------------------------------------
+(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
+Converged in 16 iterations and 38 HDFE sub-iterations (tol = 1.0e-08)
+
+HDFE PPML regression                              No. of obs      =    515,056
+Absorbing 2 HDFE groups                           Residual df     =     33,517
+Statistics robust to heteroskedasticity           Wald chi2(5)    =     882.41
+Deviance             =  1.35615e+10               Prob > chi2     =     0.0000
+Log pseudolikelihood =  -6782809214               Pseudo R2       =     0.9843
+
+Number of clusters (pair_id)=     33,518
+                              (Std. err. adjusted for 33,518 clusters in pair_id)
+---------------------------------------------------------------------------------
+                |               Robust
+          inter | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+----------------+----------------------------------------------------------------
+ea_export_shock |   .0876009    .027841     3.15   0.002     .0330335    .1421683
+ea_import_shock |   .0109174    .030566     0.36   0.721    -.0489909    .0708257
+       ln_gdp_i |   .6259964   .0277295    22.58   0.000     .5716476    .6803452
+       ln_gdp_j |   .5583749   .0336666    16.59   0.000     .4923896    .6243602
+            rta |   .0922478   .0326772     2.82   0.005     .0282017    .1562939
+          _cons |  -17.23308   1.279563   -13.47   0.000    -19.74098   -14.72518
+---------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     pair_id |     33518       33518           0    *|
+        year |        20           1          19     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+. est store Inter_Goods
+
+. 
+. * 6.3 Consumption Goods (Variable: conso)
+. * Hypothesis: Least impact expected as consumption is usually more stable than investment.
+. ppmlhdfe conso ea_export_shock ea_import_shock ln_gdp_i ln_gdp_j rta, ///
+>     absorb(pair_id year) cluster(pair_id)
+(dropped 4809 observations that are either singletons or separated by a fixed effect)
+warning: dependent variable takes very low values after standardizing (8.7211e-10)
+Iteration 1:   deviance = 2.5548e+10  eps = .         iters = 4    tol = 1.0e-04  min(eta) =  -5.04  P   
+Iteration 2:   deviance = 1.0608e+10  eps = 1.41e+00  iters = 3    tol = 1.0e-04  min(eta) =  -6.89      
+Iteration 3:   deviance = 7.3200e+09  eps = 4.49e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.51      
+Iteration 4:   deviance = 6.4392e+09  eps = 1.37e-01  iters = 3    tol = 1.0e-04  min(eta) =  -9.63      
+Iteration 5:   deviance = 6.1771e+09  eps = 4.24e-02  iters = 3    tol = 1.0e-04  min(eta) = -10.60      
+Iteration 6:   deviance = 6.1005e+09  eps = 1.26e-02  iters = 2    tol = 1.0e-04  min(eta) = -11.54      
+Iteration 7:   deviance = 6.0791e+09  eps = 3.51e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.51      
+Iteration 8:   deviance = 6.0735e+09  eps = 9.20e-04  iters = 2    tol = 1.0e-04  min(eta) = -13.46      
+Iteration 9:   deviance = 6.0722e+09  eps = 2.23e-04  iters = 2    tol = 1.0e-04  min(eta) = -14.40      
+Iteration 10:  deviance = 6.0719e+09  eps = 4.96e-05  iters = 2    tol = 1.0e-04  min(eta) = -15.29      
+Iteration 11:  deviance = 6.0718e+09  eps = 1.02e-05  iters = 2    tol = 1.0e-05  min(eta) = -16.23      
+Iteration 12:  deviance = 6.0718e+09  eps = 1.99e-06  iters = 2    tol = 1.0e-05  min(eta) = -17.08   S  
+Iteration 13:  deviance = 6.0718e+09  eps = 3.74e-07  iters = 2    tol = 1.0e-06  min(eta) = -18.00   S  
+Iteration 14:  deviance = 6.0718e+09  eps = 6.79e-08  iters = 2    tol = 1.0e-07  min(eta) = -18.91   S  
+Iteration 15:  deviance = 6.0718e+09  eps = 1.18e-08  iters = 2    tol = 1.0e-09  min(eta) = -19.68   S  
+Iteration 16:  deviance = 6.0718e+09  eps = 1.96e-09  iters = 2    tol = 1.0e-09  min(eta) = -20.45   S O
+------------------------------------------------------------------------------------------------------------
+(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
+Converged in 16 iterations and 38 HDFE sub-iterations (tol = 1.0e-08)
+
+HDFE PPML regression                              No. of obs      =    515,526
+Absorbing 2 HDFE groups                           Residual df     =     33,603
+Statistics robust to heteroskedasticity           Wald chi2(5)    =     545.35
+Deviance             =   6071777109               Prob > chi2     =     0.0000
+Log pseudolikelihood =  -3037745716               Pseudo R2       =     0.9820
+
+Number of clusters (pair_id)=     33,604
+                              (Std. err. adjusted for 33,604 clusters in pair_id)
+---------------------------------------------------------------------------------
+                |               Robust
+          conso | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+----------------+----------------------------------------------------------------
+ea_export_shock |   .1101788   .0335811     3.28   0.001     .0443609    .1759966
+ea_import_shock |   .1042348   .0380928     2.74   0.006     .0295743    .1788953
+       ln_gdp_i |   .3333104   .0451839     7.38   0.000     .2447515    .4218693
+       ln_gdp_j |   .7342147   .0349582    21.00   0.000     .6656979    .8027314
+            rta |   .0770827   .0328642     2.35   0.019     .0126701    .1414954
+          _cons |  -14.84803   1.561823    -9.51   0.000    -17.90914   -11.78691
+---------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     pair_id |     33604       33604           0    *|
+        year |        20           1          19     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+. est store Cons_Goods
+
+. 
+. 
+. * --------------------------------------------------------------------
+. * 7. Output Results Table
+. * --------------------------------------------------------------------
+. 
+. * Export the regression table to an RTF file (readable by Word).
+. 
+. esttab Total_Trade Capital_Goods Inter_Goods Cons_Goods using "EuroArea_Results.rtf", ///
+>     se star(* 0.10 ** 0.05 *** 0.01) replace ///
+>     title("Resilience of Euro Area Trade Flows Post-2008 Crisis") ///
+>     scalars(N ll) ///
+>     label mtitles("Total" "Capital" "Intermediate" "Consumption") ///
+>     addnote("Method: PPML with Pair and Year Fixed Effects.")
+(output written to EuroArea_Results.rtf)
+
+. 
+.         
+. * --------------------------------------------------------------------
+. * 8. Robustness Check 1: Placebo Test (Fake Crisis Year)
+. * --------------------------------------------------------------------
+. preserve
+
+.     * 只保留 2008 年之前的数据（以此来测试危机前是否存在差异趋势）
+.     keep if year < 2008
+(344,851 observations deleted)
+
+.     
+.     * 假定危机发生在 2004 年
+.     gen placebo_post = (year >= 2004)
+
+.     gen placebo_export_shock = ea_i * placebo_post
+
+.     gen placebo_import_shock = ea_j * placebo_post
+
+.     
+.     ppmlhdfe trade placebo_export_shock placebo_import_shock ln_gdp_i ln_gdp_j rta, ///
+>         absorb(pair_id year) cluster(pair_id)
+(dropped 3198 observations that are either singletons or separated by a fixed effect)
+warning: dependent variable takes very low values after standardizing (2.9210e-10)
+Iteration 1:   deviance = 2.1984e+10  eps = .         iters = 4    tol = 1.0e-04  min(eta) =  -4.73  P   
+Iteration 2:   deviance = 7.1537e+09  eps = 2.07e+00  iters = 3    tol = 1.0e-04  min(eta) =  -6.39      
+Iteration 3:   deviance = 3.8340e+09  eps = 8.66e-01  iters = 3    tol = 1.0e-04  min(eta) =  -7.80      
+Iteration 4:   deviance = 2.8752e+09  eps = 3.33e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.87      
+Iteration 5:   deviance = 2.5915e+09  eps = 1.09e-01  iters = 2    tol = 1.0e-04  min(eta) =  -9.86      
+Iteration 6:   deviance = 2.5111e+09  eps = 3.20e-02  iters = 2    tol = 1.0e-04  min(eta) = -10.86      
+Iteration 7:   deviance = 2.4896e+09  eps = 8.64e-03  iters = 2    tol = 1.0e-04  min(eta) = -11.84      
+Iteration 8:   deviance = 2.4843e+09  eps = 2.15e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.80      
+Iteration 9:   deviance = 2.4830e+09  eps = 4.87e-04  iters = 2    tol = 1.0e-04  min(eta) = -13.69      
+Iteration 10:  deviance = 2.4828e+09  eps = 9.79e-05  iters = 2    tol = 1.0e-04  min(eta) = -14.47      
+Iteration 11:  deviance = 2.4828e+09  eps = 1.75e-05  iters = 2    tol = 1.0e-05  min(eta) = -15.25      
+Iteration 12:  deviance = 2.4828e+09  eps = 2.83e-06  iters = 2    tol = 1.0e-05  min(eta) = -15.99   S  
+Iteration 13:  deviance = 2.4827e+09  eps = 4.18e-07  iters = 2    tol = 1.0e-06  min(eta) = -16.88   S  
+Iteration 14:  deviance = 2.4827e+09  eps = 5.37e-08  iters = 2    tol = 1.0e-07  min(eta) = -17.62   S  
+Iteration 15:  deviance = 2.4827e+09  eps = 5.97e-09  iters = 2    tol = 1.0e-09  min(eta) = -18.46   S O
+------------------------------------------------------------------------------------------------------------
+(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
+Converged in 15 iterations and 35 HDFE sub-iterations (tol = 1.0e-08)
+
+HDFE PPML regression                              No. of obs      =    190,101
+Absorbing 2 HDFE groups                           Residual df     =     28,778
+Statistics robust to heteroskedasticity           Wald chi2(5)    =     803.96
+Deviance             =   2482749065               Prob > chi2     =     0.0000
+Log pseudolikelihood =  -1242238606               Pseudo R2       =     0.9935
+
+Number of clusters (pair_id)=     28,779
+                                   (Std. err. adjusted for 28,779 clusters in pair_id)
+--------------------------------------------------------------------------------------
+                     |               Robust
+               trade | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+---------------------+----------------------------------------------------------------
+placebo_export_shock |  -.0734447   .0242968    -3.02   0.003    -.1210656   -.0258238
+placebo_import_shock |  -.0510171   .0280042    -1.82   0.068    -.1059044    .0038702
+            ln_gdp_i |   .6836345   .0463294    14.76   0.000     .5928305    .7744386
+            ln_gdp_j |   .6170246   .0470842    13.10   0.000     .5247413    .7093079
+                 rta |   .1067154   .0470558     2.27   0.023     .0144878    .1989431
+               _cons |  -19.84732   1.349776   -14.70   0.000    -22.49283   -17.20181
+--------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     pair_id |     28779       28779           0    *|
+        year |         8           1           7     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+.         
+.     est store Placebo_Test
+
+.     * 预期结果：placebo_export_shock 应该是不显著的。
+. restore
+
+. 
+. 
+. 
+. 
+. 
+. 
+end of do-file
+
+. do "C:\Users\jiang\AppData\Local\Temp\STD1d8_000000.tmp"
+
+. 
+. * --------------------------------------------------------------------
+. * 8. Robustness Check 2: OLS Comparison
+. * --------------------------------------------------------------------
+. * OLS 会丢掉零值贸易流，所以样本量会变小
+. gen ln_trade = ln(trade)
+
+. reghdfe ln_trade ea_export_shock ea_import_shock ln_gdp_i ln_gdp_j rta, ///
+>     absorb(pair_id year) cluster(pair_id)
+(dropped 2076 singleton observations)
+(MWFE estimator converged in 6 iterations)
+
+HDFE Linear regression                            Number of obs   =    518,259
+Absorbing 2 HDFE groups                           F(   5,  34380) =     508.95
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.8693
+                                                  Adj R-squared   =     0.8600
+                                                  Within R-sq.    =     0.0149
+Number of clusters (pair_id) =     34,381         Root MSE        =     1.5893
+
+                              (Std. err. adjusted for 34,381 clusters in pair_id)
+---------------------------------------------------------------------------------
+                |               Robust
+       ln_trade | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+----------------+----------------------------------------------------------------
+ea_export_shock |  -.0433445   .0205887    -2.11   0.035    -.0836991   -.0029899
+ea_import_shock |  -.1499647   .0278604    -5.38   0.000    -.2045721   -.0953573
+       ln_gdp_i |   .4322246   .0199052    21.71   0.000     .3932097    .4712395
+       ln_gdp_j |   .7359996   .0177815    41.39   0.000     .7011473    .7708519
+            rta |   .0742221   .0197061     3.77   0.000     .0355974    .1128467
+          _cons |  -21.20262   .6439953   -32.92   0.000    -22.46487   -19.94037
+---------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     pair_id |     34381       34381           0    *|
+        year |        20           1          19     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+. est store OLS_Comparison
+
+. 
+end of do-file
+
+. ssc install wbopendata
+checking wbopendata consistency and verifying not already installed...
+installing into C:\Users\jiang\ado\plus\...
+installation complete.
+
+. do "C:\Users\jiang\AppData\Local\Temp\STD1d8_000000.tmp"
+
+. * --------------------------------------------------------------------
+. * 8. Robustness Check 1: Placebo Test (Fake Crisis Year)
+. * --------------------------------------------------------------------
+. preserve
+
+.     clear
+
+.     * 下载 REER 数据 (World Bank Indicator: PX.REX.REER)
+.     * 注意：你需要联网
+.     wbopendata, indicator(PX.REX.REER) long clear
+
+    Metadata for indicator PX.REX.REER
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Name: Real effective exchange rate index (2010 = 100)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Collection: 2 World Development Indicators
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Description: Real effective exchange rate is the nominal effective exchange rate (a measure of the value of a currency against a weighted average of several foreign currencies) divided by a price deflator or
+    index of costs. This indicator is an index series where 2010=100.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Note: International Financial Statistics database, International Monetary Fund (IMF)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Topic(s): 7 Financial Sector
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+.     
+.     * 保留需要的变量
+.     keep countrycode year px_rex_reer
+
+.     
+.     * 重命名以便合并 (先做 Exporter 的)
+.     rename countrycode iso3_i
+
+.     rename px_rex_reer reer_i
+
+.     
+.     * 取对数 (引力模型通常用对数形式)
+.     gen ln_reer_i = ln(reer_i)
+(13,232 missing values generated)
+
+.     
+.     * 保存临时文件
+.     tempfile reer_data_i
+
+.     save `reer_data_i'
+file C:\Users\jiang\AppData\Local\Temp\ST_1d8_000002.tmp saved as .dta format
+
+.     
+.     * 准备 Importer 的数据 (重命名一下即可)
+.     rename iso3_i iso3_j
+
+.     rename ln_reer_i ln_reer_j
+
+.     rename reer_i reer_j
+
+.     
+.     tempfile reer_data_j
+
+.     save `reer_data_j'
+file C:\Users\jiang\AppData\Local\Temp\ST_1d8_000003.tmp saved as .dta format
+
+. restore
+
+. 
+. * --------------------------------------------------------------------
+. * 2. 将汇率数据合并进你的主数据
+. * --------------------------------------------------------------------
+. * 合并 Exporter 汇率
+. merge m:1 iso3_i year using `reer_data_i'
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                        13,195
+        from master                         0  (_merge==1)
+        from using                     13,195  (_merge==2)
+
+    Matched                           549,177  (_merge==3)
+    -----------------------------------------
+
+. drop if _merge == 2 // 删除主数据中没有的年份/国家
+(13,195 observations deleted)
+
+. drop _merge
+
+. 
+. * 合并 Importer 汇率
+. merge m:1 iso3_j year using `reer_data_j'
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                        13,195
+        from master                         0  (_merge==1)
+        from using                     13,195  (_merge==2)
+
+    Matched                           549,177  (_merge==3)
+    -----------------------------------------
+
+. drop if _merge == 2
+(13,195 observations deleted)
+
+. drop _merge
+
+. 
+. * 检查一下有多少缺失值 (有些小国家可能没有 REER 数据)
+. codebook ln_reer_i
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ln_reer_i                                                                                                                                                                                                        (unlabeled)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                  Type: Numeric (float)
+
+                 Range: [3.9900568,6.6089501]         Units: 1.000e-07
+         Unique values: 1,798                     Missing .: 254,640/549,177
+
+                  Mean: 4.58974
+             Std. dev.: .151363
+
+           Percentiles:     10%       25%       50%       75%       90%
+                        4.41796   4.53775   4.60022   4.64583   4.72773
+
+. 
+. 
+. preserve
+
+.     keep if year < 2008
+(344,851 observations deleted)
+
+.     
+.     * 假定危机发生在 2004
+.     gen placebo_post = (year >= 2004)
+
+.     gen placebo_export_shock = ea_i * placebo_post
+
+.     gen placebo_import_shock = ea_j * placebo_post
+
+.     
+.     * 加入 ln_reer_i 和 ln_reer_j 进行控制
+.     ppmlhdfe trade placebo_export_shock placebo_import_shock ///
+>         ln_gdp_i ln_gdp_j rta ln_reer_i ln_reer_j, /// <--- 新增变量
+>         absorb(pair_id year) cluster(pair_id)
+(dropped 306 observations that are either singletons or separated by a fixed effect)
+warning: dependent variable takes very low values after standardizing (1.6389e-10)
+Iteration 1:   deviance = 1.5436e+10  eps = .         iters = 3    tol = 1.0e-04  min(eta) =  -4.29  P   
+Iteration 2:   deviance = 4.6354e+09  eps = 2.33e+00  iters = 3    tol = 1.0e-04  min(eta) =  -5.95      
+Iteration 3:   deviance = 2.1631e+09  eps = 1.14e+00  iters = 3    tol = 1.0e-04  min(eta) =  -7.55      
+Iteration 4:   deviance = 1.4537e+09  eps = 4.88e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.69      
+Iteration 5:   deviance = 1.2458e+09  eps = 1.67e-01  iters = 2    tol = 1.0e-04  min(eta) =  -9.68      
+Iteration 6:   deviance = 1.1869e+09  eps = 4.96e-02  iters = 2    tol = 1.0e-04  min(eta) = -10.65      
+Iteration 7:   deviance = 1.1710e+09  eps = 1.36e-02  iters = 2    tol = 1.0e-04  min(eta) = -11.55      
+Iteration 8:   deviance = 1.1670e+09  eps = 3.45e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.46      
+Iteration 9:   deviance = 1.1660e+09  eps = 8.10e-04  iters = 2    tol = 1.0e-04  min(eta) = -13.44      
+Iteration 10:  deviance = 1.1658e+09  eps = 1.73e-04  iters = 2    tol = 1.0e-04  min(eta) = -14.39      
+Iteration 11:  deviance = 1.1658e+09  eps = 3.23e-05  iters = 2    tol = 1.0e-04  min(eta) = -15.28      
+Iteration 12:  deviance = 1.1658e+09  eps = 5.15e-06  iters = 2    tol = 1.0e-05  min(eta) = -16.06      
+Iteration 13:  deviance = 1.1658e+09  eps = 7.48e-07  iters = 2    tol = 1.0e-06  min(eta) = -16.59   S  
+Iteration 14:  deviance = 1.1658e+09  eps = 1.09e-07  iters = 2    tol = 1.0e-07  min(eta) = -17.41   S  
+Iteration 15:  deviance = 1.1658e+09  eps = 1.48e-08  iters = 2    tol = 1.0e-07  min(eta) = -18.19   S  
+Iteration 16:  deviance = 1.1658e+09  eps = 1.67e-09  iters = 2    tol = 1.0e-09  min(eta) = -18.71   S O
+------------------------------------------------------------------------------------------------------------
+(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
+Converged in 16 iterations and 36 HDFE sub-iterations (tol = 1.0e-08)
+
+HDFE PPML regression                              No. of obs      =     58,044
+Absorbing 2 HDFE groups                           Residual df     =      7,964
+Statistics robust to heteroskedasticity           Wald chi2(7)    =     565.97
+Deviance             =   1165779483               Prob > chi2     =     0.0000
+Log pseudolikelihood = -583193444.1               Pseudo R2       =     0.9955
+
+Number of clusters (pair_id)=      7,965
+                                    (Std. err. adjusted for 7,965 clusters in pair_id)
+--------------------------------------------------------------------------------------
+                     |               Robust
+               trade | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+---------------------+----------------------------------------------------------------
+placebo_export_shock |  -.0277797   .0242204    -1.15   0.251    -.0752509    .0196915
+placebo_import_shock |  -.0261207   .0274906    -0.95   0.342    -.0800012    .0277598
+            ln_gdp_i |   .9540041   .0772448    12.35   0.000      .802607    1.105401
+            ln_gdp_j |   .7833639   .0786932     9.95   0.000      .629128    .9375998
+                 rta |   .0642944   .0502893     1.28   0.201    -.0342708    .1628596
+           ln_reer_i |  -.5384054   .1051427    -5.12   0.000    -.7444813   -.3323296
+           ln_reer_j |  -.3304624    .106175    -3.11   0.002    -.5385617   -.1223631
+               _cons |  -27.87745   2.121438   -13.14   0.000    -32.03539   -23.71951
+--------------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+     pair_id |      7965        7965           0    *|
+        year |         8           1           7     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+.         
+.     est store Placebo_With_XR
+
+. restore
+
+. 
+end of do-file
+
+. do "C:\Users\jiang\AppData\Local\Temp\STD1d8_000000.tmp"
+
+. * Export the regression table to an RTF file (readable by Word).
+. 
+. * 1. Main Results
+. esttab Total_Trade Capital_Goods Inter_Goods Cons_Goods ///
+>     using "$output/EuroArea_Results.tex", ///
+>     replace ///
+>     booktabs /// 
+>     label /// 
+>     se star(* 0.10 ** 0.05 *** 0.01) /// 
+>     b(%9.3f) se(%9.3f) /// 
+>     stats(N ll, labels("Observations" "Log Likelihood") fmt(0 2)) /// 
+>     title("Table 1: Resilience of Euro Area Trade Flows Post-2008 Crisis (PPML Results)") ///
+>     mtitles("Total Trade" "Capital" "Intermediate" "Consumption") ///
+>     addnote("Notes: Robust standard errors clustered by country-pair in parentheses. All specifications include pair and year fixed effects.")
+(file E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/output/EuroArea_Results.tex not found)
+(output written to E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/output/EuroArea_Results.tex)
+
+.         
+. 
+end of do-file
+

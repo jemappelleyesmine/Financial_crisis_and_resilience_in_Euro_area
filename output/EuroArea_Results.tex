@@ -1,0 +1,34 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Table 1: Resilience of Euro Area Trade Flows Post-2008 Crisis (PPML Results)}
+\begin{tabular}{l*{4}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+                    &\multicolumn{1}{c}{Total Trade}&\multicolumn{1}{c}{Capital}&\multicolumn{1}{c}{Intermediate}&\multicolumn{1}{c}{Consumption}\\
+\midrule
+ea\_export\_shock     &       0.090\sym{***}&       0.042         &       0.088\sym{***}&       0.110\sym{***}\\
+                    &     (0.029)         &     (0.057)         &     (0.028)         &     (0.034)         \\
+\addlinespace
+ea\_import\_shock     &       0.024         &      -0.110\sym{*}  &       0.011         &       0.104\sym{***}\\
+                    &     (0.032)         &     (0.063)         &     (0.031)         &     (0.038)         \\
+\addlinespace
+ln\_gdp\_i            &       0.569\sym{***}&       0.676\sym{***}&       0.626\sym{***}&       0.333\sym{***}\\
+                    &     (0.030)         &     (0.046)         &     (0.028)         &     (0.045)         \\
+\addlinespace
+ln\_gdp\_j            &       0.597\sym{***}&       0.550\sym{***}&       0.558\sym{***}&       0.734\sym{***}\\
+                    &     (0.031)         &     (0.048)         &     (0.034)         &     (0.035)         \\
+\addlinespace
+Regional Trade Agreements (source: WTO) &       0.072\sym{***}&      -0.012         &       0.092\sym{***}&       0.077\sym{**} \\
+                    &     (0.026)         &     (0.055)         &     (0.033)         &     (0.033)         \\
+\addlinespace
+Constant            &     -16.239\sym{***}&     -19.374\sym{***}&     -17.233\sym{***}&     -14.848\sym{***}\\
+                    &     (1.329)         &     (2.344)         &     (1.280)         &     (1.562)         \\
+\midrule
+Observations        &      518259         &      498134         &      515056         &      515526         \\
+Log Likelihood      &   -9.32e+09         &   -2.81e+09         &   -6.78e+09         &   -3.04e+09         \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{5}{l}{\footnotesize Notes: Robust standard errors clustered by country-pair in parentheses. All specifications include pair and year fixed effects.}\\
+\multicolumn{5}{l}{\footnotesize \sym{*} \(p<0.10\), \sym{**} \(p<0.05\), \sym{***} \(p<0.01\)}\\
+\end{tabular}
+\end{table}
