@@ -1,8 +1,9 @@
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
-       log:  E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/output/analysis_log.txt
+       log:  E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/output/ana
+> lysis_log.txt
   log type:  text
- opened on:  29 Dec 2025, 18:31:27
+ opened on:  30 Dec 2025, 15:51:32
 
 .    
 . * Load data
@@ -287,7 +288,7 @@ Panel variable: pair_id (unbalanced)
 . 
 . * We use Poisson Pseudo Maximum Likelihood (PPML) to account for zero trade flows and heteroskedasticity.
 . 
-. * 5.1 Total Trade Resilience
+. * 5.1 Total Trade Resilienceand
 . * Specification:
 . * - absorb(pair_id year): Controls for Pair Fixed Effects (time-invariant factors like distance) 
 . * and Year Fixed Effects (global shocks).
@@ -538,364 +539,6 @@ Absorbed degrees of freedom:
 . 
 . * Export the regression table to an RTF file (readable by Word).
 . 
-. esttab Total_Trade Capital_Goods Inter_Goods Cons_Goods using "EuroArea_Results.rtf", ///
->     se star(* 0.10 ** 0.05 *** 0.01) replace ///
->     title("Resilience of Euro Area Trade Flows Post-2008 Crisis") ///
->     scalars(N ll) ///
->     label mtitles("Total" "Capital" "Intermediate" "Consumption") ///
->     addnote("Method: PPML with Pair and Year Fixed Effects.")
-(output written to EuroArea_Results.rtf)
-
-. 
-.         
-. * --------------------------------------------------------------------
-. * 8. Robustness Check 1: Placebo Test (Fake Crisis Year)
-. * --------------------------------------------------------------------
-. preserve
-
-.     * 只保留 2008 年之前的数据（以此来测试危机前是否存在差异趋势）
-.     keep if year < 2008
-(344,851 observations deleted)
-
-.     
-.     * 假定危机发生在 2004 年
-.     gen placebo_post = (year >= 2004)
-
-.     gen placebo_export_shock = ea_i * placebo_post
-
-.     gen placebo_import_shock = ea_j * placebo_post
-
-.     
-.     ppmlhdfe trade placebo_export_shock placebo_import_shock ln_gdp_i ln_gdp_j rta, ///
->         absorb(pair_id year) cluster(pair_id)
-(dropped 3198 observations that are either singletons or separated by a fixed effect)
-warning: dependent variable takes very low values after standardizing (2.9210e-10)
-Iteration 1:   deviance = 2.1984e+10  eps = .         iters = 4    tol = 1.0e-04  min(eta) =  -4.73  P   
-Iteration 2:   deviance = 7.1537e+09  eps = 2.07e+00  iters = 3    tol = 1.0e-04  min(eta) =  -6.39      
-Iteration 3:   deviance = 3.8340e+09  eps = 8.66e-01  iters = 3    tol = 1.0e-04  min(eta) =  -7.80      
-Iteration 4:   deviance = 2.8752e+09  eps = 3.33e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.87      
-Iteration 5:   deviance = 2.5915e+09  eps = 1.09e-01  iters = 2    tol = 1.0e-04  min(eta) =  -9.86      
-Iteration 6:   deviance = 2.5111e+09  eps = 3.20e-02  iters = 2    tol = 1.0e-04  min(eta) = -10.86      
-Iteration 7:   deviance = 2.4896e+09  eps = 8.64e-03  iters = 2    tol = 1.0e-04  min(eta) = -11.84      
-Iteration 8:   deviance = 2.4843e+09  eps = 2.15e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.80      
-Iteration 9:   deviance = 2.4830e+09  eps = 4.87e-04  iters = 2    tol = 1.0e-04  min(eta) = -13.69      
-Iteration 10:  deviance = 2.4828e+09  eps = 9.79e-05  iters = 2    tol = 1.0e-04  min(eta) = -14.47      
-Iteration 11:  deviance = 2.4828e+09  eps = 1.75e-05  iters = 2    tol = 1.0e-05  min(eta) = -15.25      
-Iteration 12:  deviance = 2.4828e+09  eps = 2.83e-06  iters = 2    tol = 1.0e-05  min(eta) = -15.99   S  
-Iteration 13:  deviance = 2.4827e+09  eps = 4.18e-07  iters = 2    tol = 1.0e-06  min(eta) = -16.88   S  
-Iteration 14:  deviance = 2.4827e+09  eps = 5.37e-08  iters = 2    tol = 1.0e-07  min(eta) = -17.62   S  
-Iteration 15:  deviance = 2.4827e+09  eps = 5.97e-09  iters = 2    tol = 1.0e-09  min(eta) = -18.46   S O
-------------------------------------------------------------------------------------------------------------
-(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
-Converged in 15 iterations and 35 HDFE sub-iterations (tol = 1.0e-08)
-
-HDFE PPML regression                              No. of obs      =    190,101
-Absorbing 2 HDFE groups                           Residual df     =     28,778
-Statistics robust to heteroskedasticity           Wald chi2(5)    =     803.96
-Deviance             =   2482749065               Prob > chi2     =     0.0000
-Log pseudolikelihood =  -1242238606               Pseudo R2       =     0.9935
-
-Number of clusters (pair_id)=     28,779
-                                   (Std. err. adjusted for 28,779 clusters in pair_id)
---------------------------------------------------------------------------------------
-                     |               Robust
-               trade | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
----------------------+----------------------------------------------------------------
-placebo_export_shock |  -.0734447   .0242968    -3.02   0.003    -.1210656   -.0258238
-placebo_import_shock |  -.0510171   .0280042    -1.82   0.068    -.1059044    .0038702
-            ln_gdp_i |   .6836345   .0463294    14.76   0.000     .5928305    .7744386
-            ln_gdp_j |   .6170246   .0470842    13.10   0.000     .5247413    .7093079
-                 rta |   .1067154   .0470558     2.27   0.023     .0144878    .1989431
-               _cons |  -19.84732   1.349776   -14.70   0.000    -22.49283   -17.20181
---------------------------------------------------------------------------------------
-
-Absorbed degrees of freedom:
------------------------------------------------------+
- Absorbed FE | Categories  - Redundant  = Num. Coefs |
--------------+---------------------------------------|
-     pair_id |     28779       28779           0    *|
-        year |         8           1           7     |
------------------------------------------------------+
-* = FE nested within cluster; treated as redundant for DoF computation
-
-.         
-.     est store Placebo_Test
-
-.     * 预期结果：placebo_export_shock 应该是不显著的。
-. restore
-
-. 
-. 
-. 
-. 
-. 
-. 
-end of do-file
-
-. do "C:\Users\jiang\AppData\Local\Temp\STD1d8_000000.tmp"
-
-. 
-. * --------------------------------------------------------------------
-. * 8. Robustness Check 2: OLS Comparison
-. * --------------------------------------------------------------------
-. * OLS 会丢掉零值贸易流，所以样本量会变小
-. gen ln_trade = ln(trade)
-
-. reghdfe ln_trade ea_export_shock ea_import_shock ln_gdp_i ln_gdp_j rta, ///
->     absorb(pair_id year) cluster(pair_id)
-(dropped 2076 singleton observations)
-(MWFE estimator converged in 6 iterations)
-
-HDFE Linear regression                            Number of obs   =    518,259
-Absorbing 2 HDFE groups                           F(   5,  34380) =     508.95
-Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.8693
-                                                  Adj R-squared   =     0.8600
-                                                  Within R-sq.    =     0.0149
-Number of clusters (pair_id) =     34,381         Root MSE        =     1.5893
-
-                              (Std. err. adjusted for 34,381 clusters in pair_id)
----------------------------------------------------------------------------------
-                |               Robust
-       ln_trade | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
-----------------+----------------------------------------------------------------
-ea_export_shock |  -.0433445   .0205887    -2.11   0.035    -.0836991   -.0029899
-ea_import_shock |  -.1499647   .0278604    -5.38   0.000    -.2045721   -.0953573
-       ln_gdp_i |   .4322246   .0199052    21.71   0.000     .3932097    .4712395
-       ln_gdp_j |   .7359996   .0177815    41.39   0.000     .7011473    .7708519
-            rta |   .0742221   .0197061     3.77   0.000     .0355974    .1128467
-          _cons |  -21.20262   .6439953   -32.92   0.000    -22.46487   -19.94037
----------------------------------------------------------------------------------
-
-Absorbed degrees of freedom:
------------------------------------------------------+
- Absorbed FE | Categories  - Redundant  = Num. Coefs |
--------------+---------------------------------------|
-     pair_id |     34381       34381           0    *|
-        year |        20           1          19     |
------------------------------------------------------+
-* = FE nested within cluster; treated as redundant for DoF computation
-
-. est store OLS_Comparison
-
-. 
-end of do-file
-
-. ssc install wbopendata
-checking wbopendata consistency and verifying not already installed...
-installing into C:\Users\jiang\ado\plus\...
-installation complete.
-
-. do "C:\Users\jiang\AppData\Local\Temp\STD1d8_000000.tmp"
-
-. * --------------------------------------------------------------------
-. * 8. Robustness Check 1: Placebo Test (Fake Crisis Year)
-. * --------------------------------------------------------------------
-. preserve
-
-.     clear
-
-.     * 下载 REER 数据 (World Bank Indicator: PX.REX.REER)
-.     * 注意：你需要联网
-.     wbopendata, indicator(PX.REX.REER) long clear
-
-    Metadata for indicator PX.REX.REER
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    Name: Real effective exchange rate index (2010 = 100)
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    Collection: 2 World Development Indicators
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    Description: Real effective exchange rate is the nominal effective exchange rate (a measure of the value of a currency against a weighted average of several foreign currencies) divided by a price deflator or
-    index of costs. This indicator is an index series where 2010=100.
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    Note: International Financial Statistics database, International Monetary Fund (IMF)
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    Topic(s): 7 Financial Sector
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-.     
-.     * 保留需要的变量
-.     keep countrycode year px_rex_reer
-
-.     
-.     * 重命名以便合并 (先做 Exporter 的)
-.     rename countrycode iso3_i
-
-.     rename px_rex_reer reer_i
-
-.     
-.     * 取对数 (引力模型通常用对数形式)
-.     gen ln_reer_i = ln(reer_i)
-(13,232 missing values generated)
-
-.     
-.     * 保存临时文件
-.     tempfile reer_data_i
-
-.     save `reer_data_i'
-file C:\Users\jiang\AppData\Local\Temp\ST_1d8_000002.tmp saved as .dta format
-
-.     
-.     * 准备 Importer 的数据 (重命名一下即可)
-.     rename iso3_i iso3_j
-
-.     rename ln_reer_i ln_reer_j
-
-.     rename reer_i reer_j
-
-.     
-.     tempfile reer_data_j
-
-.     save `reer_data_j'
-file C:\Users\jiang\AppData\Local\Temp\ST_1d8_000003.tmp saved as .dta format
-
-. restore
-
-. 
-. * --------------------------------------------------------------------
-. * 2. 将汇率数据合并进你的主数据
-. * --------------------------------------------------------------------
-. * 合并 Exporter 汇率
-. merge m:1 iso3_i year using `reer_data_i'
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                        13,195
-        from master                         0  (_merge==1)
-        from using                     13,195  (_merge==2)
-
-    Matched                           549,177  (_merge==3)
-    -----------------------------------------
-
-. drop if _merge == 2 // 删除主数据中没有的年份/国家
-(13,195 observations deleted)
-
-. drop _merge
-
-. 
-. * 合并 Importer 汇率
-. merge m:1 iso3_j year using `reer_data_j'
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                        13,195
-        from master                         0  (_merge==1)
-        from using                     13,195  (_merge==2)
-
-    Matched                           549,177  (_merge==3)
-    -----------------------------------------
-
-. drop if _merge == 2
-(13,195 observations deleted)
-
-. drop _merge
-
-. 
-. * 检查一下有多少缺失值 (有些小国家可能没有 REER 数据)
-. codebook ln_reer_i
-
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ln_reer_i                                                                                                                                                                                                        (unlabeled)
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-                  Type: Numeric (float)
-
-                 Range: [3.9900568,6.6089501]         Units: 1.000e-07
-         Unique values: 1,798                     Missing .: 254,640/549,177
-
-                  Mean: 4.58974
-             Std. dev.: .151363
-
-           Percentiles:     10%       25%       50%       75%       90%
-                        4.41796   4.53775   4.60022   4.64583   4.72773
-
-. 
-. 
-. preserve
-
-.     keep if year < 2008
-(344,851 observations deleted)
-
-.     
-.     * 假定危机发生在 2004
-.     gen placebo_post = (year >= 2004)
-
-.     gen placebo_export_shock = ea_i * placebo_post
-
-.     gen placebo_import_shock = ea_j * placebo_post
-
-.     
-.     * 加入 ln_reer_i 和 ln_reer_j 进行控制
-.     ppmlhdfe trade placebo_export_shock placebo_import_shock ///
->         ln_gdp_i ln_gdp_j rta ln_reer_i ln_reer_j, /// <--- 新增变量
->         absorb(pair_id year) cluster(pair_id)
-(dropped 306 observations that are either singletons or separated by a fixed effect)
-warning: dependent variable takes very low values after standardizing (1.6389e-10)
-Iteration 1:   deviance = 1.5436e+10  eps = .         iters = 3    tol = 1.0e-04  min(eta) =  -4.29  P   
-Iteration 2:   deviance = 4.6354e+09  eps = 2.33e+00  iters = 3    tol = 1.0e-04  min(eta) =  -5.95      
-Iteration 3:   deviance = 2.1631e+09  eps = 1.14e+00  iters = 3    tol = 1.0e-04  min(eta) =  -7.55      
-Iteration 4:   deviance = 1.4537e+09  eps = 4.88e-01  iters = 3    tol = 1.0e-04  min(eta) =  -8.69      
-Iteration 5:   deviance = 1.2458e+09  eps = 1.67e-01  iters = 2    tol = 1.0e-04  min(eta) =  -9.68      
-Iteration 6:   deviance = 1.1869e+09  eps = 4.96e-02  iters = 2    tol = 1.0e-04  min(eta) = -10.65      
-Iteration 7:   deviance = 1.1710e+09  eps = 1.36e-02  iters = 2    tol = 1.0e-04  min(eta) = -11.55      
-Iteration 8:   deviance = 1.1670e+09  eps = 3.45e-03  iters = 2    tol = 1.0e-04  min(eta) = -12.46      
-Iteration 9:   deviance = 1.1660e+09  eps = 8.10e-04  iters = 2    tol = 1.0e-04  min(eta) = -13.44      
-Iteration 10:  deviance = 1.1658e+09  eps = 1.73e-04  iters = 2    tol = 1.0e-04  min(eta) = -14.39      
-Iteration 11:  deviance = 1.1658e+09  eps = 3.23e-05  iters = 2    tol = 1.0e-04  min(eta) = -15.28      
-Iteration 12:  deviance = 1.1658e+09  eps = 5.15e-06  iters = 2    tol = 1.0e-05  min(eta) = -16.06      
-Iteration 13:  deviance = 1.1658e+09  eps = 7.48e-07  iters = 2    tol = 1.0e-06  min(eta) = -16.59   S  
-Iteration 14:  deviance = 1.1658e+09  eps = 1.09e-07  iters = 2    tol = 1.0e-07  min(eta) = -17.41   S  
-Iteration 15:  deviance = 1.1658e+09  eps = 1.48e-08  iters = 2    tol = 1.0e-07  min(eta) = -18.19   S  
-Iteration 16:  deviance = 1.1658e+09  eps = 1.67e-09  iters = 2    tol = 1.0e-09  min(eta) = -18.71   S O
-------------------------------------------------------------------------------------------------------------
-(legend: p: exact partial-out   s: exact solver   h: step-halving   o: epsilon below tolerance)
-Converged in 16 iterations and 36 HDFE sub-iterations (tol = 1.0e-08)
-
-HDFE PPML regression                              No. of obs      =     58,044
-Absorbing 2 HDFE groups                           Residual df     =      7,964
-Statistics robust to heteroskedasticity           Wald chi2(7)    =     565.97
-Deviance             =   1165779483               Prob > chi2     =     0.0000
-Log pseudolikelihood = -583193444.1               Pseudo R2       =     0.9955
-
-Number of clusters (pair_id)=      7,965
-                                    (Std. err. adjusted for 7,965 clusters in pair_id)
---------------------------------------------------------------------------------------
-                     |               Robust
-               trade | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
----------------------+----------------------------------------------------------------
-placebo_export_shock |  -.0277797   .0242204    -1.15   0.251    -.0752509    .0196915
-placebo_import_shock |  -.0261207   .0274906    -0.95   0.342    -.0800012    .0277598
-            ln_gdp_i |   .9540041   .0772448    12.35   0.000      .802607    1.105401
-            ln_gdp_j |   .7833639   .0786932     9.95   0.000      .629128    .9375998
-                 rta |   .0642944   .0502893     1.28   0.201    -.0342708    .1628596
-           ln_reer_i |  -.5384054   .1051427    -5.12   0.000    -.7444813   -.3323296
-           ln_reer_j |  -.3304624    .106175    -3.11   0.002    -.5385617   -.1223631
-               _cons |  -27.87745   2.121438   -13.14   0.000    -32.03539   -23.71951
---------------------------------------------------------------------------------------
-
-Absorbed degrees of freedom:
------------------------------------------------------+
- Absorbed FE | Categories  - Redundant  = Num. Coefs |
--------------+---------------------------------------|
-     pair_id |      7965        7965           0    *|
-        year |         8           1           7     |
------------------------------------------------------+
-* = FE nested within cluster; treated as redundant for DoF computation
-
-.         
-.     est store Placebo_With_XR
-
-. restore
-
-. 
-end of do-file
-
-. do "C:\Users\jiang\AppData\Local\Temp\STD1d8_000000.tmp"
-
-. * Export the regression table to an RTF file (readable by Word).
-. 
 . * 1. Main Results
 . esttab Total_Trade Capital_Goods Inter_Goods Cons_Goods ///
 >     using "$output/EuroArea_Results.tex", ///
@@ -908,10 +551,17 @@ end of do-file
 >     title("Table 1: Resilience of Euro Area Trade Flows Post-2008 Crisis (PPML Results)") ///
 >     mtitles("Total Trade" "Capital" "Intermediate" "Consumption") ///
 >     addnote("Notes: Robust standard errors clustered by country-pair in parentheses. All specifications include pair and year fixed effects.")
-(file E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/output/EuroArea_Results.tex not found)
-(output written to E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/output/EuroArea_Results.tex)
+(output written to E:/00 M2 Quantitative Economic Analysis/OC - Quantitative International trade - 3ECTS - 2COEF/Financial_crisis_and_resilience_in_Euro_area/outp
+> ut/EuroArea_Results.tex)
 
 .         
 . 
+. 
+. 
+. 
+. 
+. 
+. 
 end of do-file
 
+. exit, clear

@@ -221,7 +221,7 @@ xtset pair_id year
 
 * We use Poisson Pseudo Maximum Likelihood (PPML) to account for zero trade flows and heteroskedasticity.
 
-* 5.1 Total Trade Resilience
+* 5.1 Total Trade Resilienceand
 * Specification:
 * - absorb(pair_id year): Controls for Pair Fixed Effects (time-invariant factors like distance) 
 * and Year Fixed Effects (global shocks).
